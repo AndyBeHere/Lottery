@@ -1,41 +1,36 @@
-# Chainlink Truffle Box
+# Project for DeepGo Interview
+## Task
+1. 具备管理员和参与者两种身份，管理员发起彩票活动，并设置彩票开奖时间，参与者在彩票发起至彩票开奖间可参与购买彩票； 
+2. 每个参与者每次投资5DAI购买一注彩票，一个参与者可购买多注彩票；
+3. 彩票中奖数字由4位0-9之间的数字构成，中奖数字随机生成，中奖者按购买对应数字的注数平分彩票池，平台收取20%的手续费；
+4. 管理员可多次发起彩票活动，但是同一时间仅支持一个彩票活动存在；
+5. 需提供接口查询往期彩票的中奖数字和中奖者；
 
-<br/>
-<p align="center">
-<a href="https://chain.link" target="_blank">
-<img src="https://raw.githubusercontent.com/smartcontractkit/box/master/box-img-lg.png" width="225" alt="Chainlink Truffle logo">
-</a>
-</p>
-<br/>
+## Solution
+1. 权限：合约创建者设为管理员；其他地址为参与者。
+2. 时间变量：
+	- 设开启彩票blocktime为t1；
+	- 参与者只能在 [t1, t1+5 minutes) 时段内进入彩池；
+	- 开奖必须在（t1+5 minutes, t1+ 10 minutes] 时间段内完成，若超时未开奖，则此次无法开奖，需要由管理者返还彩池资金给参与者。
+3. 随机数：
+	- 参与者每次下注需向chainlink请求随机值用于计算1～9999的随机数作为参与者的开奖号；
+	- 开奖时，需向chainlink请求随机值用于从所有开奖号中随机选取一个作为幸运数字开奖。
+4. 查询往期彩票的中奖数字和中奖者
+	- 调用view函数查看上一期中奖数字
+	- 调用view函数查看上一期中奖者
+	- ps: 由于时间不足，未实现所有往期信息的查询。
 
 ## Requirements
 
 - NPM
+- Truffle
+- truffle chainlink smartcontractkit/box
 
 ## Installation
 
-1. Install truffle
+1. Install dependencies by running:
 
-```bash
-npm install truffle -g
 ```
-
-2. Setup repo
-
-```bash
-mkdir MyChainlinkProject
-cd MyChainlinkProject/
-```
-
-3. Unbox
-
-```bash
-truffle unbox smartcontractkit/box
-```
-
-4. Install dependencies by running:
-
-```bash
 npm install
 
 # OR...
@@ -43,100 +38,23 @@ npm install
 yarn install
 ```
 
-## Test
-
-```bash
-npm test
-```
-
 ## Deploy
 
 For deploying to the kovan network, Truffle will use `truffle-hdwallet-provider` for your mnemonic and an RPC URL. Set your environment variables `$RPC_URL` and `$MNEMONIC` before running:
 
-```bash
-npm run migrate:kovan
 ```
-
-You can also run:
-
-```bash
 truffle migrate --network kovan --reset
 ```
-If you want to use truffle commands.
 
-### Local Blockchain
-
-> :warning: Without a Chainlink node deployed locally, requests from smart contracts will not be responded to. We recommend you deploy to the Kovan network
-
-If needed, edit the `truffle-config.js` config file to set the desired network to a different port. It assumes any network is running the RPC port on 8545.
-
-```bash
-npm run migrate:dev
-```
-
-## Helper Scripts
-
-There are 3 helper scripts provided with this box in the scripts directory:
-
-- `fund-contract.js`
-- `request-data.js`
-- `read-contract.js`
-
-In addition, for working with Chainlink Price Feeds and ChainlinkVRF there are folders respectively. 
-
-They can be used by calling them from `npx truffle exec`, for example:
-
-```bash
-npx truffle exec scripts/fund-contract.js --network kovan
-```
-
-The CLI will output something similar to the following:
+## Test
 
 ```
-Using network 'kovan'.
-
-Funding contract: 0x972DB80842Fdaf6015d80954949dBE0A1700705E
-0xd81fcf7bfaf8660149041c823e843f0b2409137a1809a0319d26db9ceaeef650
-Truffle v5.0.25 (core: 5.0.25)
-Node v10.16.3
+truffle test 
 ```
 
-In the `request-data.js` script, example parameters are provided for you. You can change the oracle address, Job ID, and parameters based on the information available on [our documentation](https://docs.chain.link/docs/decentralized-oracles-ethereum-mainnet/#testnets).
 
-```bash
-npx truffle exec scripts/request-data.js --network kovan
-```
 
-This creates a request and will return the transaction ID, for example:
-
-```
-Using network 'kovan'.
-
-Creating request on contract: 0x972DB80842Fdaf6015d80954949dBE0A1700705E
-0x828f256109f22087b0804a4d1a5c25e8ce9e5ac4bbc777b5715f5f9e5b181a4b
-Truffle v5.0.25 (core: 5.0.25)
-Node v10.16.3
-```
-
-After creating a request on a kovan network, you will want to wait 3 blocks for the Chainlink node to respond. Then call the `read-contract.js` script to read the contract's state.
-
-```bash
-npx truffle exec scripts/read-contract.js --network kovan
-```
-
-Once the oracle has responded, you will receive a value similar to the one below:
-
-```
-Using network 'kovan'.
-
-21568
-Truffle v5.0.25 (core: 5.0.25)
-Node v10.16.3
-```
-
-## TODO
-
-- Add tests for ChainlinkVRF
-- Add tests for Chainlink Price Feeds
-- Refactor tests to use this instead of defining contracts with let
-- Use the Chainlink-published mocks for [MockV3Aggregator](https://github.com/smartcontractkit/chainlink/blob/develop/evm-contracts/src/v0.6/tests/MockV3Aggregator.sol) and [VRFCoordinatorMock](https://github.com/smartcontractkit/chainlink/blob/develop/evm-contracts/src/v0.6/tests/VRFCoordinatorMock.sol)
+## Reference
+- Based on Ethereum's Welfare Lottery solidity smart contract design: https://www.programmersought.com/article/3027737305/
+- deployment tutorial: https://medium.com/coinmonks/5-minute-guide-to-deploying-smart-contracts-with-truffle-and-ropsten-b3e30d5ee1e
+- chainlink tutorial: https://github.com/Ivan-on-Tech-Academy/chainlink_lottery_truffle
